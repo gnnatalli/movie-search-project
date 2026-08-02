@@ -209,7 +209,6 @@ def main():
                 handle_keyword_search()
 
             elif choice == "2":
-
                 handle_genre_year_search()
 
             elif choice == "3":
@@ -220,7 +219,7 @@ def main():
                 break
 
             else:
-                print("Неверный выбор. Введите 0, 1 или 2.")
+                print("Неверный выбор. Введите 0, 1, 2 или 3.")
 
         except mysql.connector.Error as error:
             print(f"Ошибка работы с MySQL: {error}")
