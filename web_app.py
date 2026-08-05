@@ -6,6 +6,7 @@ from typing import Annotated
 
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 from log_stats import get_popular_searches, get_recent_searches
@@ -23,6 +24,12 @@ app = FastAPI(
     description="Поиск фильмов в базе Sakila",
 )
 
+app.mount(
+    "/static",
+    StaticFiles(directory="static"),
+    name="static",
+)
+
 templates = Jinja2Templates(directory="templates")
 
 
@@ -33,7 +40,7 @@ def describe_search(search_type, params):
         return f"Ключевое слово: {params.get('keyword', '')}"
 
     if search_type == "genre_year":
-        genre = params.get("genre", "")
+        genre = params.get("genre") or params.get("genre_name", "")
         start_year = params.get("start_year", "")
         end_year = params.get("end_year", "")
 
@@ -67,6 +74,12 @@ def get_page_context():
         "selected_genre_id": "",
         "start_year": min_year,
         "end_year": max_year,
+        "offset": 0,
+        "has_previous": False,
+        "has_next": False,
+        "previous_offset": 0,
+        "next_offset": 10,
+        "pagination_type": None,
     }
 
 
@@ -87,11 +100,16 @@ def show_home_page(request: Request):
 def search_keyword(
     request: Request,
     keyword: Annotated[str, Form()],
+    offset: Annotated[int, Form()] = 0,
+    log_search: Annotated[str, Form()] = "",
 ):
     """Ищет фильмы по ключевому слову."""
 
     context = get_page_context()
     keyword = keyword.strip()
+
+    if offset < 0:
+        offset = 0
 
     context["keyword"] = keyword
 
@@ -104,24 +122,43 @@ def search_keyword(
             context=context,
         )
 
-    movies = search_by_keyword(
+    limit = 10
+
+    movies_with_extra = search_by_keyword(
         keyword,
-        limit=10,
-        offset=0,
+        limit=limit + 1,
+        offset=offset,
     )
 
-    save_search(
-        search_type="keyword",
-        params={"keyword": keyword},
-        results_count=len(movies),
-    )
+    movies = movies_with_extra[:limit]
+    has_next = len(movies_with_extra) > limit
+
+    if log_search == "1":
+        save_search(
+            search_type="keyword",
+            params={"keyword": keyword},
+            results_count=len(movies),
+        )
 
     context["movies"] = movies
+    context["offset"] = offset
+    context["has_previous"] = offset > 0
+    context["has_next"] = has_next
+    context["previous_offset"] = max(0, offset - limit)
+    context["next_offset"] = offset + limit
+    context["pagination_type"] = "keyword"
 
     if movies:
-        context["message"] = f"Показано результатов: {len(movies)}"
-    else:
+        page_number = offset // limit + 1
+
+        context["message"] = (
+            f"Страница {page_number}. "
+            f"Показано результатов: {len(movies)}"
+        )
+    elif offset == 0:
         context["message"] = "Фильмы не найдены."
+    else:
+        context["message"] = "Больше фильмов нет."
 
     return templates.TemplateResponse(
         request=request,
@@ -129,17 +166,21 @@ def search_keyword(
         context=context,
     )
 
-
 @app.post("/search/genre", response_class=HTMLResponse)
 def search_genre(
     request: Request,
     genre_id: Annotated[int, Form()],
     start_year: Annotated[int, Form()],
     end_year: Annotated[int, Form()],
+    offset: Annotated[int, Form()] = 0,
+    log_search: Annotated[str, Form()] = "",
 ):
     """Ищет фильмы по жанру и диапазону годов."""
 
     context = get_page_context()
+
+    if offset < 0:
+        offset = 0
 
     context["selected_genre_id"] = genre_id
     context["start_year"] = start_year
@@ -168,34 +209,50 @@ def search_genre(
         )
 
     else:
+        limit = 10
         genre_name = categories[genre_id]
 
-        movies = search_by_genre_and_year(
+        movies_with_extra = search_by_genre_and_year(
             genre_id,
             start_year,
             end_year,
-            limit=10,
-            offset=0,
+            limit=limit + 1,
+            offset=offset,
         )
 
-        save_search(
-            search_type="genre_year",
-            params={
-                "genre": genre_name,
-                "start_year": start_year,
-                "end_year": end_year,
-            },
-            results_count=len(movies),
-        )
+        movies = movies_with_extra[:limit]
+        has_next = len(movies_with_extra) > limit
+
+        if log_search == "1":
+            save_search(
+                search_type="genre_year",
+                params={
+                    "genre": genre_name,
+                    "start_year": start_year,
+                    "end_year": end_year,
+                },
+                results_count=len(movies),
+            )
 
         context["movies"] = movies
+        context["offset"] = offset
+        context["has_previous"] = offset > 0
+        context["has_next"] = has_next
+        context["previous_offset"] = max(0, offset - limit)
+        context["next_offset"] = offset + limit
+        context["pagination_type"] = "genre"
 
         if movies:
+            page_number = offset // limit + 1
+
             context["message"] = (
+                f"Страница {page_number}. "
                 f"Показано результатов: {len(movies)}"
             )
-        else:
+        elif offset == 0:
             context["message"] = "Фильмы не найдены."
+        else:
+            context["message"] = "Больше фильмов нет."
 
     return templates.TemplateResponse(
         request=request,
@@ -237,7 +294,7 @@ def show_statistics(request: Request):
                     search_data.get("search_type"),
                     search_data.get("params", {}),
                 ),
-                "count": search.get("count", 0),
+                "count": search.get("search_count", 0),
             }
         )
 

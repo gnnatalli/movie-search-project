@@ -1,0 +1,84 @@
+body {
+    min-height: 100vh;
+    background: linear-gradient(
+        135deg,
+        #dbeafe 0%,
+        #f8fafc 50%,
+        #ccfbf1 100%
+    );
+}
+
+.navbar {
+    background: linear-gradient(
+        90deg,
+        #111827,
+        #1e3a8a
+    ) !important;
+
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    letter-spacing: 0.7px;
+}
+
+h1,
+h2 {
+    color: #1e293b;
+    font-weight: 700;
+}
+
+.card {
+    border: none;
+    border-radius: 18px;
+    overflow: hidden;
+
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    transition: 0.2s;
+}
+
+.form-control,
+.form-select {
+    padding: 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+.btn {
+    padding: 11px 18px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.alert {
+    border: none;
+    border-radius: 12px;
+}
+
+.table thead th {
+    padding: 14px;
+}
+
+.table tbody td {
+    padding: 13px 14px;
+    vertical-align: middle;
+}
+
+.table tbody tr:hover {
+    background-color: #eff6ff;
+}
+
+.badge {
+    font-size: 0.9rem;
+}
