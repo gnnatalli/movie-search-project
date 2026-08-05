@@ -96,7 +96,7 @@ def print_recent_searches(searches):
 
         print(
             f"{number}. {description} | "
-            f"результатов: {results_count} | "
+            f"показано результатов: {results_count} | "
             f"{formatted_time}"
         )
 

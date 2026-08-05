@@ -37,6 +37,7 @@ def show_main_menu():
     print("0. Выход")
     print("=" * 40)
 
+
 def handle_keyword_search():
     """Обрабатывает поиск фильмов по ключевому слову."""
 
@@ -101,6 +102,7 @@ def handle_keyword_search():
         results_count=total_results,
     )
 
+
 def handle_genre_year_search():
     """Обрабатывает поиск фильмов по жанру и диапазону годов."""
 
@@ -125,7 +127,7 @@ def handle_genre_year_search():
 
     valid_genre_ids = [
         category_id
-        for category_id, category_name in categories
+        for category_id, _ in categories
     ]
 
     if genre_id not in valid_genre_ids:
@@ -210,6 +212,7 @@ def handle_genre_year_search():
         results_count=total_results,
     )
 
+
 def show_search_statistics():
     """Получает и выводит статистику поисковых запросов."""
 
@@ -218,6 +221,7 @@ def show_search_statistics():
 
     print_recent_searches(recent_searches)
     print_popular_searches(popular_searches)
+
 
 def main():
     """Запускает главное меню приложения."""
@@ -246,6 +250,7 @@ def main():
 
         except mysql.connector.Error as error:
             print(f"Ошибка работы с MySQL: {error}")
+
 
 if __name__ == "__main__":
     main()

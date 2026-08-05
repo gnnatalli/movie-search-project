@@ -5,7 +5,7 @@
 - время запроса;
 - тип поиска;
 - параметры поиска;
-- количество найденных результатов.
+- количество показанных пользователю результатов.
 """
 
 from datetime import datetime, timezone
@@ -28,7 +28,7 @@ def save_search(search_type, params, results_count):
         search_type (str): тип поиска.
             Например: "keyword" или "genre_year".
         params (dict): параметры поискового запроса.
-        results_count (int): количество найденных фильмов.
+        results_count (int): количество показанных пользователю фильмов.
 
     Returns:
         bool: True, если запись выполнена успешно,
@@ -43,6 +43,7 @@ def save_search(search_type, params, results_count):
         "results_count": results_count,
     }
 
+
     try:
         # MongoClient создаёт подключение к серверу MongoDB
         with MongoClient(MONGODB_URL_WRITE) as client:
@@ -54,16 +55,8 @@ def save_search(search_type, params, results_count):
 
         return True
 
+
     except PyMongoError as error:
         print(f"Ошибка записи в MongoDB: {error}")
         return False
 
-if __name__ == "__main__":
-        is_saved = save_search(
-            search_type="keyword",
-            params={"keyword": "academy"},
-            results_count=2,
-        )
-
-        if is_saved:
-            print("Тестовый запрос успешно сохранён в MongoDB.")

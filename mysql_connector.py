@@ -17,6 +17,7 @@ def get_connection():
     """
     return mysql.connector.connect(**dbconfig)
 
+
 def get_categories():
     """
     Получает список всех жанров из базы sakila.
@@ -43,6 +44,7 @@ def get_categories():
     connection.close()
 
     return categories
+
 
 def get_year_range():
     """
@@ -71,6 +73,7 @@ def get_year_range():
     connection.close()
 
     return year_range
+
 
 def search_by_keyword(keyword, limit=10, offset=0):
     """
@@ -112,6 +115,7 @@ def search_by_keyword(keyword, limit=10, offset=0):
     connection.close()
 
     return films
+
 
 def search_by_genre_and_year(
         genre_id,
@@ -172,24 +176,3 @@ def search_by_genre_and_year(
 
     return films
 
-# Проверка подключения при запуске файла напрямую
-if __name__ == "__main__":
-    try:
-        films = search_by_genre_and_year(
-            genre_id=5,
-            start_year=1990,
-            end_year=2026,
-            limit=10,
-            offset=10
-        )
-
-        print("Результаты поиска по жанру и годам:")
-
-        for film_id, title, release_year, genre in films:
-            print(
-                f"{film_id}: {title} "
-                f"({release_year}) — {genre}"
-            )
-
-    except mysql.connector.Error as error:
-        print(f"❌ Ошибка работы с MySQL: {error}")

@@ -49,13 +49,14 @@ def get_recent_searches(limit=5):
         ) as client:
             collection = get_collection(client)
 
-            searches = collection.find(
-                {},
-                {"_id": 0},
-            ).sort(
-                "timestamp",
-                -1,
-            ).limit(limit)
+            searches = (
+                collection.find(
+                    {},
+                    {"_id": 0},
+                )
+                .sort("timestamp", -1)
+                .limit(limit)
+            )
 
             return list(searches)
 
@@ -118,6 +119,3 @@ def get_popular_searches(limit=5):
     except PyMongoError as error:
         print(f"Ошибка получения популярных запросов: {error}")
         return []
-
-get_recent_searches()
-get_popular_searches()
