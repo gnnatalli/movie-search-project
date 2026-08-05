@@ -56,18 +56,29 @@ def handle_keyword_search():
 
     while True:
         movies = search_by_keyword(
-            keyword=keyword,
+            keyword,
             limit=limit,
             offset=offset,
         )
 
+        # Проверяем, вернул ли запрос фильмы
+        if not movies:
+            if offset == 0:
+                print("Фильмы не найдены.")
+            else:
+                print("Больше результатов нет.")
+            break
+
+        # Показываем текущую страницу
         print_movies(movies)
 
-        # Добавляем количество фильмов с текущей страницы
+        # Добавляем количество показанных фильмов
         total_results += len(movies)
 
+        # Если найдено меньше 10 фильмов,
+        # следующей страницы быть не может
         if len(movies) < limit:
-            print("Больше результатов нет.")
+            print("Это все результаты.")
             break
 
         choice = input(
@@ -77,6 +88,7 @@ def handle_keyword_search():
         if choice != "y":
             break
 
+        # Переходим к следующей странице
         offset += limit
 
     # Записываем поиск в MongoDB один раз,
@@ -151,14 +163,24 @@ def handle_genre_year_search():
             offset=offset,
         )
 
-        print_movies(movies)
-        total_results += len(movies)
-
+        # Если фильмы не найдены
         if not movies:
+            if offset == 0:
+                print("Фильмы не найдены.")
+            else:
+                print("Больше результатов нет.")
             break
 
+        # Показываем найденные фильмы
+        print_movies(movies)
+
+        # Считаем фильмы, которые были показаны пользователю
+        total_results += len(movies)
+
+        # Если получено меньше 10 фильмов,
+        # следующей страницы точно нет
         if len(movies) < limit:
-            print("Больше результатов нет.")
+            print("Это все результаты.")
             break
 
         choice = input(
@@ -168,6 +190,7 @@ def handle_genre_year_search():
         if choice != "y":
             break
 
+        # Переходим к следующей странице
         offset += limit
 
     genre_name = next(
