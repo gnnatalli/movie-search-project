@@ -1,0 +1,252 @@
+"""
+Веб-интерфейс приложения для поиска фильмов.
+"""
+
+from typing import Annotated
+
+from fastapi import FastAPI, Form, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+
+from log_stats import get_popular_searches, get_recent_searches
+from log_writer import save_search
+from mysql_connector import (
+    get_categories,
+    get_year_range,
+    search_by_genre_and_year,
+    search_by_keyword,
+)
+
+
+app = FastAPI(
+    title="Movie Search",
+    description="Поиск фильмов в базе Sakila",
+)
+
+templates = Jinja2Templates(directory="templates")
+
+
+def describe_search(search_type, params):
+    """Создаёт понятное описание поискового запроса."""
+
+    if search_type == "keyword":
+        return f"Ключевое слово: {params.get('keyword', '')}"
+
+    if search_type == "genre_year":
+        genre = params.get("genre", "")
+        start_year = params.get("start_year", "")
+        end_year = params.get("end_year", "")
+
+        return f"Жанр: {genre}, годы: {start_year}–{end_year}"
+
+    return "Неизвестный тип поиска"
+
+
+def format_timestamp(timestamp):
+    """Форматирует дату и время для HTML-страницы."""
+
+    if timestamp is None:
+        return "—"
+
+    return timestamp.astimezone().strftime("%d.%m.%Y %H:%M")
+
+def get_page_context():
+    """Возвращает общие данные для главной страницы."""
+
+    categories = get_categories()
+    min_year, max_year = get_year_range()
+
+    return {
+        "page_title": "Поиск фильмов",
+        "categories": categories,
+        "min_year": min_year,
+        "max_year": max_year,
+        "movies": None,
+        "message": None,
+        "keyword": "",
+        "selected_genre_id": "",
+        "start_year": min_year,
+        "end_year": max_year,
+    }
+
+
+@app.get("/", response_class=HTMLResponse)
+def show_home_page(request: Request):
+    """Показывает главную страницу сайта."""
+
+    context = get_page_context()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context=context,
+    )
+
+
+@app.post("/search/keyword", response_class=HTMLResponse)
+def search_keyword(
+    request: Request,
+    keyword: Annotated[str, Form()],
+):
+    """Ищет фильмы по ключевому слову."""
+
+    context = get_page_context()
+    keyword = keyword.strip()
+
+    context["keyword"] = keyword
+
+    if not keyword:
+        context["message"] = "Введите ключевое слово."
+
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context=context,
+        )
+
+    movies = search_by_keyword(
+        keyword,
+        limit=10,
+        offset=0,
+    )
+
+    save_search(
+        search_type="keyword",
+        params={"keyword": keyword},
+        results_count=len(movies),
+    )
+
+    context["movies"] = movies
+
+    if movies:
+        context["message"] = f"Показано результатов: {len(movies)}"
+    else:
+        context["message"] = "Фильмы не найдены."
+
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context=context,
+    )
+
+
+@app.post("/search/genre", response_class=HTMLResponse)
+def search_genre(
+    request: Request,
+    genre_id: Annotated[int, Form()],
+    start_year: Annotated[int, Form()],
+    end_year: Annotated[int, Form()],
+):
+    """Ищет фильмы по жанру и диапазону годов."""
+
+    context = get_page_context()
+
+    context["selected_genre_id"] = genre_id
+    context["start_year"] = start_year
+    context["end_year"] = end_year
+
+    categories = {
+        category_id: category_name
+        for category_id, category_name in context["categories"]
+    }
+
+    if genre_id not in categories:
+        context["message"] = "Выберите существующий жанр."
+
+    elif start_year > end_year:
+        context["message"] = (
+            "Начальный год не может быть больше конечного."
+        )
+
+    elif (
+        start_year < context["min_year"]
+        or end_year > context["max_year"]
+    ):
+        context["message"] = (
+            f"Введите годы от {context['min_year']} "
+            f"до {context['max_year']}."
+        )
+
+    else:
+        genre_name = categories[genre_id]
+
+        movies = search_by_genre_and_year(
+            genre_id,
+            start_year,
+            end_year,
+            limit=10,
+            offset=0,
+        )
+
+        save_search(
+            search_type="genre_year",
+            params={
+                "genre": genre_name,
+                "start_year": start_year,
+                "end_year": end_year,
+            },
+            results_count=len(movies),
+        )
+
+        context["movies"] = movies
+
+        if movies:
+            context["message"] = (
+                f"Показано результатов: {len(movies)}"
+            )
+        else:
+            context["message"] = "Фильмы не найдены."
+
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context=context,
+    )
+
+@app.get("/statistics", response_class=HTMLResponse)
+def show_statistics(request: Request):
+    """Показывает статистику поисковых запросов."""
+
+    recent_searches = get_recent_searches()
+    popular_searches = get_popular_searches()
+
+    recent_rows = []
+
+    for search in recent_searches:
+        recent_rows.append(
+            {
+                "description": describe_search(
+                    search.get("search_type"),
+                    search.get("params", {}),
+                ),
+                "results_count": search.get("results_count", 0),
+                "timestamp": format_timestamp(
+                    search.get("timestamp")
+                ),
+            }
+        )
+
+    popular_rows = []
+
+    for search in popular_searches:
+        search_data = search.get("_id", {})
+
+        popular_rows.append(
+            {
+                "description": describe_search(
+                    search_data.get("search_type"),
+                    search_data.get("params", {}),
+                ),
+                "count": search.get("count", 0),
+            }
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="statistics.html",
+        context={
+            "page_title": "Статистика",
+            "recent_searches": recent_rows,
+            "popular_searches": popular_rows,
+        },
+    )

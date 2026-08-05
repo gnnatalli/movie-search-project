@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>{{ page_title }}</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+</head>
+
+<body class="bg-light">
+
+    <nav class="navbar navbar-expand navbar-dark bg-dark">
+    <div class="container">
+
+        <a class="navbar-brand" href="/">
+            Movie Search
+        </a>
+
+        <div class="navbar-nav">
+            <a class="nav-link active" href="/">
+                Поиск
+            </a>
+
+            <a class="nav-link" href="/statistics">
+                Статистика
+            </a>
+        </div>
+
+    </div>
+</nav>
+
+    <main class="container py-5">
+
+        <div class="text-center mb-5">
+            <h1>Статистика запросов</h1>
+
+            <p class="text-secondary">
+                Данные поисковых запросов из MongoDB
+            </p>
+        </div>
+
+        <div class="row g-4">
+
+            <div class="col-lg-7">
+                <div class="card shadow-sm border-0">
+
+                    <div class="card-header bg-dark text-white">
+                        Последние запросы
+                    </div>
+
+                    <div class="card-body p-0">
+
+                        {% if recent_searches %}
+                            <div class="table-responsive">
+
+                                <table class="table table-hover mb-0">
+
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Запрос</th>
+                                            <th>Результаты</th>
+                                            <th>Дата</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody>
+                                        {% for search in recent_searches %}
+                                            <tr>
+                                                <td>
+                                                    {{ search.description }}
+                                                </td>
+
+                                                <td>
+                                                    {{ search.results_count }}
+                                                </td>
+
+                                                <td>
+                                                    {{ search.timestamp }}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-secondary">
+                                История запросов пока пуста.
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0">
+
+                    <div class="card-header bg-success text-white">
+                        Популярные запросы
+                    </div>
+
+                    <div class="card-body p-0">
+
+                        {% if popular_searches %}
+                            <div class="list-group list-group-flush">
+
+                                {% for search in popular_searches %}
+                                    <div
+                                        class="list-group-item
+                                               d-flex
+                                               justify-content-between
+                                               align-items-center"
+                                    >
+                                        <span>
+                                            {{ search.description }}
+                                        </span>
+
+                                        <span
+                                            class="badge
+                                                   text-bg-success
+                                                   rounded-pill"
+                                        >
+                                            {{ search.count }}
+                                        </span>
+                                    </div>
+                                {% endfor %}
+
+                            </div>
+                        {% else %}
+                            <div class="p-4 text-secondary">
+                                Статистика пока отсутствует.
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+</body>
+</html>

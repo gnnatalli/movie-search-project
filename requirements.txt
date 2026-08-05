@@ -4,3 +4,5 @@ mysql-connector-python
 # Работа с MongoDB
 pymongo==4.17.0
 
+# Веб-интерфейс
+fastapi[standard]
