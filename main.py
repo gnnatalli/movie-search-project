@@ -17,6 +17,8 @@ from output_formatter import (
 from log_stats import get_popular_searches, get_recent_searches
 from log_writer import save_search
 from mysql_connector import (
+    count_movies_by_genre_and_year,
+    count_movies_by_keyword,
     get_categories,
     get_year_range,
     search_by_genre_and_year,
@@ -92,6 +94,8 @@ def handle_keyword_search():
         # Переходим к следующей странице
         offset += limit
 
+        total_results = count_movies_by_keyword(keyword)
+
     # Записываем поиск в MongoDB один раз,
     # когда пользователь закончил просмотр результатов
     save_search(
@@ -106,7 +110,6 @@ def handle_keyword_search():
 def handle_genre_year_search():
     """Обрабатывает поиск фильмов по жанру и диапазону годов."""
 
-    # Получаем доступные жанры и диапазон годов из MySQL
     categories = get_categories()
     min_year, max_year = get_year_range()
 
@@ -118,9 +121,6 @@ def handle_genre_year_search():
 
     try:
         genre_id = int(input("Введите номер жанра: ").strip())
-        start_year = int(input("Введите начальный год: ").strip())
-        end_year = int(input("Введите конечный год: ").strip())
-
     except ValueError:
         print("Ошибка: необходимо вводить целые числа.")
         return
@@ -132,6 +132,13 @@ def handle_genre_year_search():
 
     if genre_id not in valid_genre_ids:
         print("Жанра с таким номером нет.")
+        return
+
+    try:
+        start_year = int(input("Введите начальный год: ").strip())
+        end_year = int(input("Введите конечный год: ").strip())
+    except ValueError:
+        print("Ошибка: необходимо вводить целые числа.")
         return
 
     if not min_year <= start_year <= max_year:
@@ -154,7 +161,6 @@ def handle_genre_year_search():
 
     limit = 10
     offset = 0
-    total_results = 0
 
     while True:
         movies = search_by_genre_and_year(
@@ -165,7 +171,6 @@ def handle_genre_year_search():
             offset=offset,
         )
 
-        # Если фильмы не найдены
         if not movies:
             if offset == 0:
                 print("Фильмы не найдены.")
@@ -173,14 +178,8 @@ def handle_genre_year_search():
                 print("Больше результатов нет.")
             break
 
-        # Показываем найденные фильмы
         print_movies(movies)
 
-        # Считаем фильмы, которые были показаны пользователю
-        total_results += len(movies)
-
-        # Если получено меньше 10 фильмов,
-        # следующей страницы точно нет
         if len(movies) < limit:
             print("Это все результаты.")
             break
@@ -192,7 +191,6 @@ def handle_genre_year_search():
         if choice != "y":
             break
 
-        # Переходим к следующей странице
         offset += limit
 
     genre_name = next(
@@ -201,13 +199,17 @@ def handle_genre_year_search():
         if category_id == genre_id
     )
 
+    total_results = count_movies_by_genre_and_year(
+        genre_id,
+        start_year,
+        end_year,
+    )
+
     save_search(
-        search_type="genre_year",
+        search_type="genre__years_range",
         params={
-            "genre_id": genre_id,
-            "genre_name": genre_name,
-            "start_year": start_year,
-            "end_year": end_year,
+            "genre": genre_name,
+            "years_range": f"{start_year}-{end_year}",
         },
         results_count=total_results,
     )

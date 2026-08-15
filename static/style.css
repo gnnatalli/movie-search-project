@@ -1,84 +1,646 @@
-body {
-    min-height: 100vh;
-    background: linear-gradient(
-        135deg,
-        #dbeafe 0%,
-        #f8fafc 50%,
-        #ccfbf1 100%
-    );
+:root {
+    --blue: #79b8ff;
+    --blue-dark: #5a8dee;
+
+    --turquoise: #79d8d2;
+    --turquoise-dark: #4bbdb5;
+
+    --purple: #b69cff;
+    --purple-dark: #8f6ee8;
+
+    --lavender: #eee8ff;
+    --light-blue: #eaf6ff;
+    --light-turquoise: #e8faf7;
+
+    --text-dark: #34344a;
+    --text-soft: #6e7185;
+
+    --white-soft: rgba(255, 255, 255, 0.92);
 }
 
-.navbar {
+
+/* -------------------------------------------------
+   Общий фон
+-------------------------------------------------- */
+
+body.bg-light {
+    min-height: 100vh;
+    margin: 0;
+
+    color: var(--text-dark);
+
+    background:
+        radial-gradient(
+            circle at 10% 15%,
+            rgba(182, 156, 255, 0.35),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 90% 20%,
+            rgba(121, 216, 210, 0.35),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 50% 80%,
+            rgba(121, 184, 255, 0.25),
+            transparent 35%
+        ),
+        linear-gradient(
+            135deg,
+            #f8f3ff 0%,
+            #edf8ff 45%,
+            #effcf9 100%
+        );
+
+    background-attachment: fixed;
+}
+
+
+/* -------------------------------------------------
+   Верхняя панель
+-------------------------------------------------- */
+
+.navbar.bg-dark {
     background: linear-gradient(
         90deg,
-        #111827,
-        #1e3a8a
+        #7a68d8,
+        #769bea,
+        #63c8c4
     ) !important;
 
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 5px 20px rgba(90, 110, 180, 0.22);
 }
 
 .navbar-brand {
+    font-size: 1.4rem;
     font-weight: 700;
-    letter-spacing: 0.7px;
+    letter-spacing: 0.4px;
 }
 
-h1,
-h2 {
-    color: #1e293b;
-    font-weight: 700;
+
+/* -------------------------------------------------
+   Заголовок страницы
+-------------------------------------------------- */
+
+main > .text-center h1 {
+    font-size: 2.7rem;
+    font-weight: 800;
+
+    background: linear-gradient(
+        90deg,
+        #7c63df,
+        #598ee9,
+        #43bdb6
+    );
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
+
+main > .text-center p {
+    font-size: 1.05rem;
+    color: var(--text-soft) !important;
+}
+
+
+/* -------------------------------------------------
+   Карточки
+-------------------------------------------------- */
 
 .card {
-    border: none;
-    border-radius: 18px;
+    border-radius: 20px !important;
     overflow: hidden;
 
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+    background: var(--white-soft);
+
+    box-shadow:
+        0 10px 30px rgba(94, 99, 155, 0.12) !important;
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
 }
 
 .card:hover {
-    transform: translateY(-2px);
-    transition: 0.2s;
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 16px 38px rgba(94, 99, 155, 0.18) !important;
 }
+
+
+/* Первая карточка поиска */
+
+main > .row.g-4 > .col-lg-6:first-child .card {
+    border-top: 4px solid var(--blue) !important;
+
+    background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.96),
+        rgba(234, 246, 255, 0.94)
+    );
+}
+
+
+/* Вторая карточка поиска */
+
+main > .row.g-4 > .col-lg-6:nth-child(2) .card {
+    border-top: 4px solid var(--purple) !important;
+
+    background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.96),
+        rgba(238, 232, 255, 0.94)
+    );
+}
+
+
+/* -------------------------------------------------
+   Заголовки внутри карточек поиска
+-------------------------------------------------- */
+
+.card h2 {
+    font-weight: 700;
+    color: #4b4b68;
+}
+
+
+/* -------------------------------------------------
+   Поля ввода
+-------------------------------------------------- */
 
 .form-control,
 .form-select {
-    padding: 12px;
-    border: 1px solid #cbd5e1;
-    border-radius: 10px;
+    border-radius: 12px;
+
+    border: 1px solid #dddaf0;
+
+    padding: 0.7rem 0.9rem;
+
+    background-color: rgba(255, 255, 255, 0.9);
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
 .form-control:focus,
 .form-select:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+    border-color: var(--purple);
+
+    box-shadow:
+        0 0 0 0.2rem rgba(182, 156, 255, 0.18);
 }
+
+.form-label {
+    font-weight: 600;
+    color: #55556c;
+}
+
+
+/* -------------------------------------------------
+   Кнопки
+-------------------------------------------------- */
 
 .btn {
-    padding: 11px 18px;
-    border-radius: 10px;
-    font-weight: 600;
-}
-
-.alert {
     border: none;
     border-radius: 12px;
+
+    font-weight: 600;
+
+    padding: 0.65rem 1.2rem;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+
+/* Синяя кнопка */
+
+.btn-primary {
+    background: linear-gradient(
+        90deg,
+        #6ca9ff,
+        #6489ef
+    ) !important;
+
+    box-shadow:
+        0 5px 15px rgba(100, 137, 239, 0.25);
+}
+
+.btn-primary:hover {
+    box-shadow:
+        0 8px 20px rgba(100, 137, 239, 0.35);
+}
+
+
+/* Всё, что Bootstrap считает зелёным,
+   у нас будет сиренево-фиолетовым */
+
+.btn-success {
+    background: linear-gradient(
+        90deg,
+        #ad8df5,
+        #8d6ee8
+    ) !important;
+
+    box-shadow:
+        0 5px 15px rgba(141, 110, 232, 0.25);
+}
+
+.btn-success:hover {
+    box-shadow:
+        0 8px 20px rgba(141, 110, 232, 0.35);
+}
+
+
+/* Кнопка назад */
+
+.btn-outline-secondary {
+    border: 1px solid #b9b7ca;
+
+    color: #68687c;
+
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.btn-outline-secondary:hover {
+    background: #efedfa;
+    color: #4e4e68;
+}
+
+
+/* -------------------------------------------------
+   Заголовки карточек результатов и статистики
+-------------------------------------------------- */
+
+.card-header {
+    border: none;
+
+    padding: 0.9rem 1.2rem;
+
+    font-weight: 700;
+}
+
+
+/* Вместо тёмного */
+
+.card-header.bg-dark {
+    background: linear-gradient(
+        90deg,
+        #6d80dc,
+        #7a9eea
+    ) !important;
+}
+
+
+/* Вместо зелёного */
+
+.card-header.bg-success {
+    background: linear-gradient(
+        90deg,
+        #aa8aef,
+        #8175df,
+        #64bfc4
+    ) !important;
+}
+
+
+/* -------------------------------------------------
+   Таблицы
+-------------------------------------------------- */
+
+.table {
+    color: var(--text-dark);
+    margin-bottom: 0;
+}
+
+.table-light {
+    --bs-table-bg: #f5f3fc;
 }
 
 .table thead th {
-    padding: 14px;
+    color: #52526a;
+
+    font-size: 0.9rem;
+    font-weight: 700;
+
+    border-bottom: 1px solid #e5e1f1;
 }
 
 .table tbody td {
-    padding: 13px 14px;
     vertical-align: middle;
+
+    border-color: #efedf6;
 }
 
-.table tbody tr:hover {
-    background-color: #eff6ff;
+.table-hover tbody tr {
+    transition: background-color 0.2s ease;
 }
 
-.badge {
-    font-size: 0.9rem;
+.table-hover tbody tr:hover {
+    background-color: rgba(225, 238, 255, 0.55);
+}
+
+
+/* -------------------------------------------------
+   Сообщения
+-------------------------------------------------- */
+
+.alert-info {
+    border: none;
+    border-radius: 14px;
+
+    color: #55536b;
+
+    background: linear-gradient(
+        90deg,
+        rgba(222, 240, 255, 0.95),
+        rgba(236, 228, 255, 0.95)
+    );
+
+    box-shadow:
+        0 7px 20px rgba(106, 110, 160, 0.10);
+}
+
+
+/* -------------------------------------------------
+   Разделитель
+-------------------------------------------------- */
+
+hr {
+    border: none;
+    height: 1px;
+
+    opacity: 1;
+
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(154, 131, 229, 0.35),
+        rgba(90, 190, 190, 0.35),
+        transparent
+    );
+}
+
+
+/* -------------------------------------------------
+   Статистика
+-------------------------------------------------- */
+
+section h2 {
+    font-weight: 800;
+
+    color: #5e5783;
+}
+
+section .card {
+    background: rgba(255, 255, 255, 0.94);
+}
+
+
+/* -------------------------------------------------
+   Адаптация под телефон
+-------------------------------------------------- */
+
+@media (max-width: 768px) {
+
+    main {
+        padding-top: 2rem !important;
+    }
+
+    main > .text-center h1 {
+        font-size: 2.1rem;
+    }
+
+    .card {
+        border-radius: 16px !important;
+    }
+
+    .table {
+        font-size: 0.88rem;
+    }
+}
+
+/* -------------------------------------------------
+   Карточки фильмов
+-------------------------------------------------- */
+
+.movie-card {
+    border: none !important;
+    border-radius: 20px !important;
+    overflow: hidden;
+
+    background: rgba(255, 255, 255, 0.96);
+
+    box-shadow:
+        0 10px 28px rgba(98, 94, 160, 0.15) !important;
+
+    transition:
+        transform 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.movie-card:hover {
+    transform: translateY(-7px);
+
+    box-shadow:
+        0 18px 38px rgba(98, 94, 160, 0.23) !important;
+}
+
+
+.movie-poster {
+    position: relative;
+
+    height: 180px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        radial-gradient(
+            circle at 20% 20%,
+            rgba(255, 255, 255, 0.5),
+            transparent 35%
+        ),
+        linear-gradient(
+            135deg,
+            #b9e4ff,
+            #a8e5df,
+            #c7b3ff
+        );
+}
+
+
+.movie-year {
+    position: absolute;
+
+    top: 12px;
+    right: 12px;
+
+    padding: 5px 10px;
+
+    border-radius: 20px;
+
+    font-size: 0.8rem;
+    font-weight: 700;
+
+    color: #615b7d;
+
+    background: rgba(255, 255, 255, 0.85);
+}
+
+
+.movie-card .card-title {
+    min-height: 48px;
+
+    font-size: 1rem;
+    font-weight: 700;
+
+    color: #48455f;
+}
+
+
+.movie-genre {
+    color: #8a72cf;
+
+    font-weight: 600;
+}
+
+
+.movie-info {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+
+    margin-top: 15px;
+
+    font-size: 0.8rem;
+
+    color: #77758b;
+}
+
+.movie-poster {
+    position: relative;
+    height: 210px;
+    overflow: hidden;
+    background: #eee8ff;
+}
+
+.movie-poster-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+
+    transition: transform 0.35s ease;
+}
+
+.movie-card:hover .movie-poster-image {
+    transform: scale(1.05);
+}
+
+.movie-year {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+
+    padding: 5px 10px;
+
+    border-radius: 20px;
+
+    font-size: 0.8rem;
+    font-weight: 700;
+
+    color: #5d5681;
+
+    background: rgba(255, 255, 255, 0.88);
+
+    box-shadow: 0 3px 10px rgba(80, 75, 130, 0.12);
+}
+
+.movie-card .btn-outline-primary {
+    border: 1px solid #9c8ee8;
+    color: #7566c9;
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.movie-card .btn-outline-primary:hover {
+    color: white;
+
+    background: linear-gradient(
+        90deg,
+        #8faaf5,
+        #9a83e8,
+        #70c8c2
+    );
+
+    border-color: transparent;
+}
+
+
+.film-detail-image {
+    height: 100%;
+    min-height: 520px;
+
+    overflow: hidden;
+
+    background: linear-gradient(
+        135deg,
+        #b9e4ff,
+        #a8e5df,
+        #c7b3ff
+    );
+}
+
+
+.film-detail-poster {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    display: block;
+}
+
+.film-info-card {
+    height: 100%;
+
+    padding: 16px;
+
+    border-radius: 16px;
+
+    background: linear-gradient(
+        135deg,
+        rgba(235, 245, 255, 0.95),
+        rgba(239, 232, 255, 0.95)
+    );
+
+    box-shadow:
+        0 6px 18px rgba(95, 90, 150, 0.10);
+}
+
+
+.film-info-title {
+    margin-bottom: 6px;
+
+    font-size: 0.8rem;
+    font-weight: 600;
+
+    color: #858199;
+}
+
+
+.film-info-value {
+    font-size: 1rem;
+    font-weight: 700;
+
+    color: #55516f;
 }

@@ -8,6 +8,9 @@ local_settings.py
 __pycache__/
 *.pyc
 
+# Кэш pytest
+.pytest_cache/
+
 # Настройки PyCharm
 .idea/
 

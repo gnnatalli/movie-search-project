@@ -33,14 +33,49 @@ def get_collection(client):
 
 def get_recent_searches(limit=5):
     """
-    Получает последние поисковые запросы.
-
-    Args:
-        limit (int): максимальное количество запросов.
-
-    Returns:
-        list: список последних поисковых запросов.
+    Получает 5 последних уникальных поисковых запросов.
     """
+
+    pipeline = [
+        {
+            "$setWindowFields": {
+                "partitionBy": {
+                    "search_type": "$search_type",
+                    "params": "$params",
+                },
+                "sortBy": {
+                    "timestamp": -1,
+                },
+                "output": {
+                    "rank": {
+                        "$rank": {},
+                    }
+                },
+            }
+        },
+        {
+            "$match": {
+                "rank": 1,
+            }
+        },
+        {
+            "$sort": {
+                "timestamp": -1,
+            }
+        },
+        {
+            "$limit": limit,
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "search_type": 1,
+                "params": 1,
+                "timestamp": 1,
+                "results_count": 1,
+            }
+        },
+    ]
 
     try:
         with MongoClient(
@@ -49,19 +84,14 @@ def get_recent_searches(limit=5):
         ) as client:
             collection = get_collection(client)
 
-            searches = (
-                collection.find(
-                    {},
-                    {"_id": 0},
-                )
-                .sort("timestamp", -1)
-                .limit(limit)
-            )
+            searches = collection.aggregate(pipeline)
 
             return list(searches)
 
     except PyMongoError as error:
-        print(f"Ошибка получения последних запросов: {error}")
+        print(
+            f"Ошибка получения последних запросов: {error}"
+        )
         return []
 
 
@@ -81,6 +111,11 @@ def get_popular_searches(limit=5):
 
     pipeline = [
         {
+            "$sort": {
+                "timestamp": -1,
+            }
+        },
+        {
             "$group": {
                 "_id": {
                     "search_type": "$search_type",
@@ -89,8 +124,11 @@ def get_popular_searches(limit=5):
                 "search_count": {
                     "$sum": 1,
                 },
+                "results_count": {
+                    "$first": "$results_count",
+                },
                 "last_used": {
-                    "$max": "$timestamp",
+                    "$first": "$timestamp",
                 },
             }
         },

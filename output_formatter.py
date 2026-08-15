@@ -25,9 +25,14 @@ def print_movies(movies):
     print("Результаты поиска:")
 
     for movie in movies:
-        film_id, title, release_year = movie[:3]
+        film_id, title, release_year, category_name, length = movie
 
-        print(f"{film_id}: {title} ({release_year})")
+        print(
+            f"{film_id}: {title} | "
+            f"{category_name} | "
+            f"{release_year} | "
+            f"{length} мин."
+        )
 
 
 def format_search_description(search_type, params):
@@ -47,18 +52,17 @@ def format_search_description(search_type, params):
 
         return f'Поиск по слову: "{keyword}"'
 
-    if search_type == "genre_year":
-        genre_name = params.get(
-            "genre_name",
-            "Неизвестный жанр",
-        )
-        start_year = params.get("start_year", "")
-        end_year = params.get("end_year", "")
+    if search_type in ("genre_year", "genre__years_range"):
+        genre = params.get("genre") or params.get("genre_name", "")
 
-        return (
-            f"Жанр: {genre_name}, "
-            f"годы: {start_year}–{end_year}"
-        )
+        if "years_range" in params:
+            years = params.get("years_range", "")
+        else:
+            start_year = params.get("start_year", "")
+            end_year = params.get("end_year", "")
+            years = f"{start_year}–{end_year}"
+
+        return f"Жанр: {genre}, годы: {years}"
 
     return "Неизвестный тип поиска"
 
@@ -96,7 +100,7 @@ def print_recent_searches(searches):
 
         print(
             f"{number}. {description} | "
-            f"показано результатов: {results_count} | "
+            f"Всего найдено: {results_count} | "
             f"{formatted_time}"
         )
 
@@ -127,8 +131,19 @@ def print_popular_searches(searches):
         )
 
         search_count = search["search_count"]
+        results_count = search.get("results_count", 0)
+        last_used = search.get("last_used")
+
+        if last_used:
+            last_used = last_used.astimezone().strftime(
+                "%d.%m.%Y %H:%M"
+            )
+        else:
+            last_used = "Нет данных"
 
         print(
-            f"{number}. {description} — "
-            f"выполнен {search_count} раз(а)"
+            f"{number}. {description} | "
+            f"выполнен {search_count} раз(а) | "
+            f"Всего найдено: {results_count} | "
+            f"Последний поиск: {last_used}"
         )

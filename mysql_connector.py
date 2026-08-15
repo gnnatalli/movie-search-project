@@ -93,20 +93,24 @@ def search_by_keyword(keyword, limit=10, offset=0):
 
     query = """
         SELECT
-            film_id,
-            title,
-            release_year
-        FROM film
-        WHERE title LIKE %s
-        ORDER BY title
+            f.film_id,
+            f.title,
+            f.release_year,
+            c.name,
+            f.length
+        FROM film AS f
+        JOIN film_category AS fc
+            ON f.film_id = fc.film_id
+        JOIN category AS c
+            ON fc.category_id = c.category_id
+        WHERE LOWER(f.title) LIKE %s
+        ORDER BY f.title
         LIMIT %s OFFSET %s;
     """
 
-    search_value = f"%{keyword}%"
-
     cursor.execute(
         query,
-        (search_value, limit, offset)
+        (f"%{keyword.lower()}%", limit, offset),
     )
 
     films = cursor.fetchall()
@@ -146,7 +150,8 @@ def search_by_genre_and_year(
             f.film_id,
             f.title,
             f.release_year,
-            c.name
+            c.name,
+            f.length
         FROM film AS f
         JOIN film_category AS fc
             ON f.film_id = fc.film_id
@@ -175,4 +180,107 @@ def search_by_genre_and_year(
     connection.close()
 
     return films
+
+
+def count_movies_by_keyword(keyword):
+    """
+    Возвращает общее количество фильмов,
+    найденных по ключевому слову.
+    """
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    query = """
+        SELECT COUNT(*)
+        FROM film
+        WHERE LOWER(title) LIKE %s;
+    """
+
+    cursor.execute(
+        query,
+        (f"%{keyword.lower()}%",),
+    )
+
+    result = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+
+    return result[0]
+
+
+def count_movies_by_genre_and_year(
+        genre_id,
+        start_year,
+        end_year
+):
+    """
+    Возвращает общее количество фильмов
+    по жанру и диапазону годов.
+    """
+
+    connection = get_connection()
+    cursor = connection.cursor()
+
+    query = """
+        SELECT COUNT(DISTINCT f.film_id)
+        FROM film AS f
+        JOIN film_category AS fc
+            ON f.film_id = fc.film_id
+        WHERE fc.category_id = %s
+          AND f.release_year BETWEEN %s AND %s;
+    """
+
+    cursor.execute(
+        query,
+        (
+            genre_id,
+            start_year,
+            end_year,
+        )
+    )
+
+    result = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+
+    return result[0]
+
+
+def get_film_by_id(film_id):
+    """Возвращает подробную информацию о фильме по его ID."""
+
+    connection = get_connection()
+    cursor = connection.cursor(buffered=True)
+
+    query = """
+        SELECT
+            f.film_id,
+            f.title,
+            f.description,
+            f.release_year,
+            c.name,
+            f.rental_duration,
+            f.rental_rate,
+            f.length,
+            f.replacement_cost,
+            f.rating
+        FROM film AS f
+        JOIN film_category AS fc
+            ON f.film_id = fc.film_id
+        JOIN category AS c
+            ON fc.category_id = c.category_id
+        WHERE f.film_id = %s
+        LIMIT 1;
+    """
+
+    cursor.execute(query, (film_id,))
+    film = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+
+    return film
 

@@ -6,3 +6,7 @@ pymongo==4.17.0
 
 # Веб-интерфейс
 fastapi[standard]
+jinja2
+
+# Автоматическое тестирование
+pytest

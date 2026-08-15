@@ -12,7 +12,10 @@ from fastapi.templating import Jinja2Templates
 from log_stats import get_popular_searches, get_recent_searches
 from log_writer import save_search
 from mysql_connector import (
+    count_movies_by_genre_and_year,
+    count_movies_by_keyword,
     get_categories,
+    get_film_by_id,
     get_year_range,
     search_by_genre_and_year,
     search_by_keyword,
@@ -39,12 +42,17 @@ def describe_search(search_type, params):
     if search_type == "keyword":
         return f"Ключевое слово: {params.get('keyword', '')}"
 
-    if search_type == "genre_year":
+    if search_type in ("genre_year", "genre__years_range"):
         genre = params.get("genre") or params.get("genre_name", "")
-        start_year = params.get("start_year", "")
-        end_year = params.get("end_year", "")
 
-        return f"Жанр: {genre}, годы: {start_year}–{end_year}"
+        if "years_range" in params:
+            years = params.get("years_range", "")
+        else:
+            start_year = params.get("start_year", "")
+            end_year = params.get("end_year", "")
+            years = f"{start_year}–{end_year}"
+
+        return f"Жанр: {genre}, годы: {years}"
 
     return "Неизвестный тип поиска"
 
@@ -57,11 +65,88 @@ def format_timestamp(timestamp):
 
     return timestamp.astimezone().strftime("%d.%m.%Y %H:%M")
 
+def add_statistics_to_context(context):
+    """Добавляет актуальную статистику запросов в context."""
+
+    recent_searches = get_recent_searches()
+    popular_searches = get_popular_searches()
+
+    recent_rows = []
+
+    for search in recent_searches:
+        recent_rows.append(
+            {
+                "description": describe_search(
+                    search.get("search_type"),
+                    search.get("params", {}),
+                ),
+                "results_count": search.get("results_count", 0),
+                "timestamp": format_timestamp(
+                    search.get("timestamp")
+                ),
+            }
+        )
+
+    popular_rows = []
+
+    for search in popular_searches:
+        search_data = search.get("_id", {})
+
+        popular_rows.append(
+            {
+                "description": describe_search(
+                    search_data.get("search_type"),
+                    search_data.get("params", {}),
+                ),
+                "count": search.get("search_count", 0),
+                "results_count": search.get("results_count", 0),
+                "timestamp": format_timestamp(
+                    search.get("last_used")
+                ),
+            }
+        )
+
+    context["recent_searches"] = recent_rows
+    context["popular_searches"] = popular_rows
+
 def get_page_context():
     """Возвращает общие данные для главной страницы."""
 
     categories = get_categories()
     min_year, max_year = get_year_range()
+    recent_searches = get_recent_searches()
+    popular_searches = get_popular_searches()
+
+    recent_rows = []
+
+    for search in recent_searches:
+        recent_rows.append(
+            {
+                "description": describe_search(
+                    search.get("search_type"),
+                    search.get("params", {}),
+                ),
+                "results_count": search.get("results_count", 0),
+                "timestamp": format_timestamp(
+                    search.get("timestamp")
+                ),
+            }
+        )
+
+    popular_rows = []
+
+    for search in popular_searches:
+        search_data = search.get("_id", {})
+
+        popular_rows.append(
+            {
+                "description": describe_search(
+                    search_data.get("search_type"),
+                    search_data.get("params", {}),
+                ),
+                "count": search.get("search_count", 0),
+            }
+        )
 
     return {
         "page_title": "Поиск фильмов",
@@ -80,6 +165,8 @@ def get_page_context():
         "previous_offset": 0,
         "next_offset": 10,
         "pagination_type": None,
+        "recent_searches": recent_rows,
+        "popular_searches": popular_rows,
     }
 
 
@@ -133,12 +220,16 @@ def search_keyword(
     movies = movies_with_extra[:limit]
     has_next = len(movies_with_extra) > limit
 
+    total_results = count_movies_by_keyword(keyword)
+
     if log_search == "1":
         save_search(
             search_type="keyword",
             params={"keyword": keyword},
-            results_count=len(movies),
+            results_count=total_results,
         )
+
+    add_statistics_to_context(context)
 
     context["movies"] = movies
     context["offset"] = offset
@@ -223,16 +314,23 @@ def search_genre(
         movies = movies_with_extra[:limit]
         has_next = len(movies_with_extra) > limit
 
+        total_results = count_movies_by_genre_and_year(
+            genre_id,
+            start_year,
+            end_year,
+        )
+
         if log_search == "1":
             save_search(
-                search_type="genre_year",
+                search_type="genre__years_range",
                 params={
                     "genre": genre_name,
-                    "start_year": start_year,
-                    "end_year": end_year,
+                    "years_range": f"{start_year}-{end_year}",
                 },
-                results_count=len(movies),
+                results_count=total_results,
             )
+
+        add_statistics_to_context(context)
 
         context["movies"] = movies
         context["offset"] = offset
@@ -305,5 +403,32 @@ def show_statistics(request: Request):
             "page_title": "Статистика",
             "recent_searches": recent_rows,
             "popular_searches": popular_rows,
+        },
+    )
+
+
+@app.get("/film/{film_id}")
+def film_detail(request: Request, film_id: int):
+    """Показывает подробную информацию о фильме."""
+
+    film = get_film_by_id(film_id)
+
+    if film is None:
+        return templates.TemplateResponse(
+            request=request,
+            name="film_detail.html",
+            context={
+                "film": None,
+                "page_title": "Фильм не найден",
+            },
+            status_code=404,
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="film_detail.html",
+        context={
+            "film": film,
+            "page_title": film[1],
         },
     )
