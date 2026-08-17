@@ -52,7 +52,11 @@ def format_search_description(search_type, params):
 
         return f'Поиск по слову: "{keyword}"'
 
-    if search_type in ("genre_year", "genre__years_range"):
+    if search_type in (
+            "genre_year",
+            "genre__years_range",
+            "genre_years_range",
+    ):
         genre = params.get("genre") or params.get("genre_name", "")
 
         if "years_range" in params:

@@ -45,7 +45,7 @@ def handle_keyword_search():
 
     keyword = input(
         "Введите слово или часть названия фильма: "
-    ).strip()
+    ).strip().lower()
 
     if not keyword:
         print("Ключевое слово не может быть пустым.")

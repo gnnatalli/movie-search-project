@@ -14,11 +14,14 @@ from log_writer import save_search
 from mysql_connector import (
     count_movies_by_genre_and_year,
     count_movies_by_keyword,
+    count_movies_by_year_range,
     get_categories,
     get_film_by_id,
     get_year_range,
     search_by_genre_and_year,
     search_by_keyword,
+    search_by_year_range,
+
 )
 
 
@@ -193,7 +196,7 @@ def search_keyword(
     """Ищет фильмы по ключевому слову."""
 
     context = get_page_context()
-    keyword = keyword.strip()
+    keyword = keyword.strip().lower()
 
     if offset < 0:
         offset = 0
@@ -282,7 +285,8 @@ def search_genre(
         for category_id, category_name in context["categories"]
     }
 
-    if genre_id not in categories:
+    # 0 означает "Все жанры"
+    if genre_id != 0 and genre_id not in categories:
         context["message"] = "Выберите существующий жанр."
 
     elif start_year > end_year:
@@ -301,24 +305,43 @@ def search_genre(
 
     else:
         limit = 10
-        genre_name = categories[genre_id]
 
-        movies_with_extra = search_by_genre_and_year(
-            genre_id,
-            start_year,
-            end_year,
-            limit=limit + 1,
-            offset=offset,
-        )
+        # Поиск без ограничения по жанру
+        if genre_id == 0:
+            genre_name = "Все жанры"
+
+            movies_with_extra = search_by_year_range(
+                start_year,
+                end_year,
+                limit=limit + 1,
+                offset=offset,
+            )
+
+            total_results = count_movies_by_year_range(
+                start_year,
+                end_year,
+            )
+
+        # Обычный поиск по конкретному жанру
+        else:
+            genre_name = categories[genre_id]
+
+            movies_with_extra = search_by_genre_and_year(
+                genre_id,
+                start_year,
+                end_year,
+                limit=limit + 1,
+                offset=offset,
+            )
+
+            total_results = count_movies_by_genre_and_year(
+                genre_id,
+                start_year,
+                end_year,
+            )
 
         movies = movies_with_extra[:limit]
         has_next = len(movies_with_extra) > limit
-
-        total_results = count_movies_by_genre_and_year(
-            genre_id,
-            start_year,
-            end_year,
-        )
 
         if log_search == "1":
             save_search(
@@ -336,7 +359,10 @@ def search_genre(
         context["offset"] = offset
         context["has_previous"] = offset > 0
         context["has_next"] = has_next
-        context["previous_offset"] = max(0, offset - limit)
+        context["previous_offset"] = max(
+            0,
+            offset - limit,
+        )
         context["next_offset"] = offset + limit
         context["pagination_type"] = "genre"
 
@@ -347,8 +373,10 @@ def search_genre(
                 f"Страница {page_number}. "
                 f"Показано результатов: {len(movies)}"
             )
+
         elif offset == 0:
             context["message"] = "Фильмы не найдены."
+
         else:
             context["message"] = "Больше фильмов нет."
 

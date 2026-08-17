@@ -644,3 +644,316 @@ section .card {
 
     color: #55516f;
 }
+
+/* =================================================
+   Финальная голубо-бирюзовая тема
+================================================= */
+
+:root {
+    --blue: #73bff2;
+    --blue-dark: #4c9fe0;
+
+    --turquoise: #73d9cf;
+    --turquoise-dark: #4fbfb5;
+
+    --light-blue: #eef8ff;
+    --light-turquoise: #e6f8f5;
+
+    --text-dark: #3e4a59;
+    --text-soft: #71808f;
+}
+
+
+/* Общий фон страницы */
+
+body.bg-light {
+    color: var(--text-dark);
+
+    background:
+        radial-gradient(
+            circle at 10% 10%,
+            rgba(115, 191, 242, 0.22),
+            transparent 28%
+        ),
+        radial-gradient(
+            circle at 90% 20%,
+            rgba(115, 217, 207, 0.25),
+            transparent 30%
+        ),
+        linear-gradient(
+            135deg,
+            #f5fbff 0%,
+            #eefaff 45%,
+            #edfbf8 100%
+        );
+
+    background-attachment: fixed;
+}
+
+
+/* Верхняя панель */
+
+.navbar.bg-dark {
+    background: linear-gradient(
+        90deg,
+        #4c9fe0,
+        #64bce7,
+        #5ccbc1
+    ) !important;
+
+    box-shadow:
+        0 5px 20px rgba(76, 159, 224, 0.22);
+}
+
+
+/* Главный заголовок */
+
+main > .text-center h1 {
+    background: linear-gradient(
+        90deg,
+        #4598db,
+        #58b8dd,
+        #4ebeb4
+    );
+
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+
+/* Карточка поиска по названию */
+
+main > .row.g-4 > .col-lg-6:first-child .card {
+    border-top: 4px solid #73bff2 !important;
+
+    background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.97),
+        rgba(238, 248, 255, 0.95)
+    );
+}
+
+
+/* Карточка поиска по жанру */
+
+main > .row.g-4 > .col-lg-6:nth-child(2) .card {
+    border-top: 4px solid #73d9cf !important;
+
+    background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.97),
+        rgba(230, 248, 245, 0.95)
+    );
+}
+
+
+/* Поля ввода */
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #73bff2;
+
+    box-shadow:
+        0 0 0 0.2rem rgba(115, 191, 242, 0.18);
+}
+
+
+/* Синяя кнопка */
+
+.btn-primary {
+    background: linear-gradient(
+        90deg,
+        #66b4ee,
+        #4c9fe0
+    ) !important;
+
+    box-shadow:
+        0 5px 15px rgba(76, 159, 224, 0.25);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(
+        90deg,
+        #55a8e6,
+        #408fce
+    ) !important;
+
+    box-shadow:
+        0 8px 20px rgba(76, 159, 224, 0.32);
+}
+
+
+/* Кнопка поиска по жанру */
+
+.btn-success {
+    background: linear-gradient(
+        90deg,
+        #73d9cf,
+        #4fbfb5
+    ) !important;
+
+    box-shadow:
+        0 5px 15px rgba(79, 191, 181, 0.25);
+}
+
+.btn-success:hover {
+    background: linear-gradient(
+        90deg,
+        #63cec4,
+        #43afa6
+    ) !important;
+}
+
+
+/* Заголовок результатов */
+
+.card-header.bg-dark {
+    background: linear-gradient(
+        90deg,
+        #559fdb,
+        #69bce8
+    ) !important;
+}
+
+
+/* Заголовок популярных запросов */
+
+.card-header.bg-success {
+    background: linear-gradient(
+        90deg,
+        #5bc5bb,
+        #62c9d2,
+        #65b8e8
+    ) !important;
+}
+
+
+/* Заголовок статистики */
+
+section h2 {
+    color: #416b82;
+}
+
+
+/* Карточки фильмов */
+
+.movie-card {
+    background: rgba(255, 255, 255, 0.96);
+
+    box-shadow:
+        0 10px 28px rgba(67, 134, 165, 0.13) !important;
+}
+
+.movie-card:hover {
+    box-shadow:
+        0 18px 38px rgba(67, 134, 165, 0.20) !important;
+}
+
+
+/* Жанр */
+
+.movie-genre {
+    color: #42aaa2;
+}
+
+
+/* Год на картинке */
+
+.movie-year {
+    color: #417488;
+
+    background: rgba(255, 255, 255, 0.9);
+}
+
+
+/* Кнопка Подробнее */
+
+.movie-card .btn-outline-primary {
+    border: 1px solid #73bff2;
+
+    color: #438fc5;
+
+    background: rgba(255, 255, 255, 0.9);
+}
+
+.movie-card .btn-outline-primary:hover {
+    color: white;
+
+    border-color: transparent;
+
+    background: linear-gradient(
+        90deg,
+        #63b6e9,
+        #55c6bc
+    );
+}
+
+
+/* Маленькие карточки на странице Подробнее */
+
+.film-info-card {
+    background: linear-gradient(
+        135deg,
+        rgba(238, 248, 255, 0.97),
+        rgba(230, 248, 245, 0.97)
+    );
+
+    box-shadow:
+        0 6px 18px rgba(66, 135, 157, 0.10);
+}
+
+.film-info-title {
+    color: #738893;
+}
+
+.film-info-value {
+    color: #3f6878;
+}
+
+
+/* Сообщения */
+
+.alert-info {
+    color: #426574;
+
+    background: linear-gradient(
+        90deg,
+        rgba(229, 246, 255, 0.96),
+        rgba(226, 249, 245, 0.96)
+    );
+}
+
+
+/* Разделители */
+
+hr {
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(92, 180, 226, 0.35),
+        rgba(82, 199, 188, 0.35),
+        transparent
+    );
+}
+
+/* Выравнивание кнопок в двух поисковых карточках */
+
+main > .row.g-4 > .col-lg-6 .card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+main > .row.g-4 > .col-lg-6 .card-body form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+main > .row.g-4 > .col-lg-6 .card-body form > .btn {
+    margin-top: auto;
+}
+
+.navbar-brand {
+    line-height: 1.2;
+}

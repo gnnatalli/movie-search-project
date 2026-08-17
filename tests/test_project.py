@@ -5,10 +5,12 @@ from fastapi.testclient import TestClient
 from local_settings import dbconfig
 from mysql_connector import (
     count_movies_by_genre_and_year,
+    count_movies_by_year_range,
     count_movies_by_keyword,
     get_categories,
     get_year_range,
     search_by_genre_and_year,
+    search_by_year_range,
     search_by_keyword,
 )
 from web_app import app
@@ -131,3 +133,61 @@ def test_home_page():
 
     assert response.status_code == 200
     assert "Поиск фильмов" in response.text
+
+
+def test_keyword_results_are_unique():
+    """Проверяет, что один фильм не дублируется из-за нескольких жанров."""
+
+    movies = search_by_keyword(
+        "dino",
+        limit=100,
+        offset=0,
+    )
+
+    film_ids = [movie[0] for movie in movies]
+
+    assert len(film_ids) == len(set(film_ids))
+
+
+def test_keyword_count_matches_search():
+    """Проверяет соответствие поиска и общего количества результатов."""
+
+    movies = search_by_keyword(
+        "dino",
+        limit=100,
+        offset=0,
+    )
+
+    count = count_movies_by_keyword("dino")
+
+    assert len(movies) == count
+
+
+def test_search_by_year_range():
+    movies = search_by_year_range(
+        start_year=2026,
+        end_year=2026,
+        limit=10,
+        offset=0
+    )
+
+    assert isinstance(movies, list)
+
+    for movie in movies:
+        assert movie[2] == 2026
+
+
+def test_count_movies_by_year_range():
+    movies = search_by_year_range(
+        start_year=2026,
+        end_year=2026,
+        limit=100,
+        offset=0
+    )
+
+    count = count_movies_by_year_range(
+        start_year=2026,
+        end_year=2026
+    )
+
+    assert count == len(movies)
