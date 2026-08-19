@@ -7,11 +7,12 @@
 - вывода последних запросов;
 - вывода популярных запросов.
 """
+from tabulate import tabulate
 
 
 def print_movies(movies):
     """
-    Выводит найденные фильмы в консоль.
+    Выводит найденные фильмы в консоль в виде таблицы.
 
     Args:
         movies (list): список фильмов из MySQL.
@@ -21,18 +22,37 @@ def print_movies(movies):
         print("Фильмы не найдены.")
         return
 
-    print()
-    print("Результаты поиска:")
+    table = []
 
     for movie in movies:
         film_id, title, release_year, category_name, length = movie
 
-        print(
-            f"{film_id}: {title} | "
-            f"{category_name} | "
-            f"{release_year} | "
-            f"{length} мин."
+        table.append(
+            [
+                film_id,
+                title,
+                release_year,
+                category_name,
+                f"{length} мин.",
+            ]
         )
+
+    print()
+    print("Результаты поиска:")
+
+    print(
+        tabulate(
+            table,
+            headers=[
+                "ID",
+                "Название",
+                "Год",
+                "Жанр",
+                "Длительность",
+            ],
+            tablefmt="rounded_grid",
+        )
+    )
 
 
 def format_search_description(search_type, params):
