@@ -9,6 +9,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from mysql.connector import Error as MySQLError
+
 from log_stats import get_popular_searches, get_recent_searches
 from log_writer import save_search
 from mysql_connector import (
@@ -38,9 +40,23 @@ app.mount(
 
 templates = Jinja2Templates(directory="templates")
 
+def database_error_response(error):
+    """Возвращает понятное сообщение при ошибке MySQL."""
+
+    print(f"Ошибка MySQL: {error}")
+
+    return HTMLResponse(
+        content=(
+            "<h2>Ошибка подключения к базе данных</h2>"
+            "<p>Не удалось выполнить запрос. Попробуйте позже.</p>"
+            '<p><a href="/">Вернуться на главную</a></p>'
+        ),
+        status_code=503,
+    )
+
 
 def describe_search(search_type, params):
-    """Создаёт понятное описание поискового запроса."""
+    """Создаёт понятное описание поискового запроса для пользователя."""
 
     if search_type == "keyword":
         return f"Ключевое слово: {params.get('keyword', '')}"
@@ -177,13 +193,17 @@ def get_page_context():
 def show_home_page(request: Request):
     """Показывает главную страницу сайта."""
 
-    context = get_page_context()
+    try:
+        context = get_page_context()
 
-    return templates.TemplateResponse(
-        request=request,
-        name="index.html",
-        context=context,
-    )
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context=context,
+        )
+
+    except MySQLError as error:
+        return database_error_response(error)
 
 
 @app.post("/search/keyword", response_class=HTMLResponse)
@@ -195,161 +215,41 @@ def search_keyword(
 ):
     """Ищет фильмы по ключевому слову."""
 
-    context = get_page_context()
-    keyword = keyword.strip().lower()
+    try:
+        context = get_page_context()
+        keyword = keyword.strip().lower()
 
-    if offset < 0:
-        offset = 0
+        if offset < 0:
+            offset = 0
 
-    context["keyword"] = keyword
+        context["keyword"] = keyword
 
-    if not keyword:
-        context["message"] = "Введите ключевое слово."
+        if not keyword:
+            context["message"] = "Введите ключевое слово."
 
-        return templates.TemplateResponse(
-            request=request,
-            name="index.html",
-            context=context,
-        )
+            return templates.TemplateResponse(
+                request=request,
+                name="index.html",
+                context=context,
+            )
 
-    limit = 10
-
-    movies_with_extra = search_by_keyword(
-        keyword,
-        limit=limit + 1,
-        offset=offset,
-    )
-
-    movies = movies_with_extra[:limit]
-    has_next = len(movies_with_extra) > limit
-
-    total_results = count_movies_by_keyword(keyword)
-
-    if log_search == "1":
-        save_search(
-            search_type="keyword",
-            params={"keyword": keyword},
-            results_count=total_results,
-        )
-
-    add_statistics_to_context(context)
-
-    context["movies"] = movies
-    context["offset"] = offset
-    context["has_previous"] = offset > 0
-    context["has_next"] = has_next
-    context["previous_offset"] = max(0, offset - limit)
-    context["next_offset"] = offset + limit
-    context["pagination_type"] = "keyword"
-
-    if movies:
-        page_number = offset // limit + 1
-
-        context["message"] = (
-            f"Страница {page_number}. "
-            f"Показано результатов: {len(movies)}"
-        )
-    elif offset == 0:
-        context["message"] = "Фильмы не найдены."
-    else:
-        context["message"] = "Больше фильмов нет."
-
-    return templates.TemplateResponse(
-        request=request,
-        name="index.html",
-        context=context,
-    )
-
-@app.post("/search/genre", response_class=HTMLResponse)
-def search_genre(
-    request: Request,
-    genre_id: Annotated[int, Form()],
-    start_year: Annotated[int, Form()],
-    end_year: Annotated[int, Form()],
-    offset: Annotated[int, Form()] = 0,
-    log_search: Annotated[str, Form()] = "",
-):
-    """Ищет фильмы по жанру и диапазону годов."""
-
-    context = get_page_context()
-
-    if offset < 0:
-        offset = 0
-
-    context["selected_genre_id"] = genre_id
-    context["start_year"] = start_year
-    context["end_year"] = end_year
-
-    categories = {
-        category_id: category_name
-        for category_id, category_name in context["categories"]
-    }
-
-    # 0 означает "Все жанры"
-    if genre_id != 0 and genre_id not in categories:
-        context["message"] = "Выберите существующий жанр."
-
-    elif start_year > end_year:
-        context["message"] = (
-            "Начальный год не может быть больше конечного."
-        )
-
-    elif (
-        start_year < context["min_year"]
-        or end_year > context["max_year"]
-    ):
-        context["message"] = (
-            f"Введите годы от {context['min_year']} "
-            f"до {context['max_year']}."
-        )
-
-    else:
         limit = 10
 
-        # Поиск без ограничения по жанру
-        if genre_id == 0:
-            genre_name = "Все жанры"
-
-            movies_with_extra = search_by_year_range(
-                start_year,
-                end_year,
-                limit=limit + 1,
-                offset=offset,
-            )
-
-            total_results = count_movies_by_year_range(
-                start_year,
-                end_year,
-            )
-
-        # Обычный поиск по конкретному жанру
-        else:
-            genre_name = categories[genre_id]
-
-            movies_with_extra = search_by_genre_and_year(
-                genre_id,
-                start_year,
-                end_year,
-                limit=limit + 1,
-                offset=offset,
-            )
-
-            total_results = count_movies_by_genre_and_year(
-                genre_id,
-                start_year,
-                end_year,
-            )
+        movies_with_extra = search_by_keyword(
+            keyword,
+            limit=limit + 1,
+            offset=offset,
+        )
 
         movies = movies_with_extra[:limit]
         has_next = len(movies_with_extra) > limit
 
+        total_results = count_movies_by_keyword(keyword)
+
         if log_search == "1":
             save_search(
-                search_type="genre__years_range",
-                params={
-                    "genre": genre_name,
-                    "years_range": f"{start_year}-{end_year}",
-                },
+                search_type="keyword",
+                params={"keyword": keyword},
                 results_count=total_results,
             )
 
@@ -359,12 +259,9 @@ def search_genre(
         context["offset"] = offset
         context["has_previous"] = offset > 0
         context["has_next"] = has_next
-        context["previous_offset"] = max(
-            0,
-            offset - limit,
-        )
+        context["previous_offset"] = max(0, offset - limit)
         context["next_offset"] = offset + limit
-        context["pagination_type"] = "genre"
+        context["pagination_type"] = "keyword"
 
         if movies:
             page_number = offset // limit + 1
@@ -380,11 +277,145 @@ def search_genre(
         else:
             context["message"] = "Больше фильмов нет."
 
-    return templates.TemplateResponse(
-        request=request,
-        name="index.html",
-        context=context,
-    )
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context=context,
+        )
+
+    except MySQLError as error:
+        return database_error_response(error)
+
+
+@app.post("/search/genre", response_class=HTMLResponse)
+def search_genre(
+    request: Request,
+    genre_id: Annotated[int, Form()],
+    start_year: Annotated[int, Form()],
+    end_year: Annotated[int, Form()],
+    offset: Annotated[int, Form()] = 0,
+    log_search: Annotated[str, Form()] = "",
+):
+    """Ищет фильмы по жанру и диапазону годов."""
+
+    try:
+        context = get_page_context()
+
+        if offset < 0:
+            offset = 0
+
+        context["selected_genre_id"] = genre_id
+        context["start_year"] = start_year
+        context["end_year"] = end_year
+
+        categories = {
+            category_id: category_name
+            for category_id, category_name in context["categories"]
+        }
+
+        # 0 означает "Все жанры"
+        if genre_id != 0 and genre_id not in categories:
+            context["message"] = "Выберите существующий жанр."
+
+        elif start_year > end_year:
+            context["message"] = (
+                "Начальный год не может быть больше конечного."
+            )
+
+        elif (
+            start_year < context["min_year"]
+            or end_year > context["max_year"]
+        ):
+            context["message"] = (
+                f"Введите годы от {context['min_year']} "
+                f"до {context['max_year']}."
+            )
+
+        else:
+            limit = 10
+
+            # Поиск без ограничения по жанру
+            if genre_id == 0:
+                genre_name = "Все жанры"
+
+                movies_with_extra = search_by_year_range(
+                    start_year,
+                    end_year,
+                    limit=limit + 1,
+                    offset=offset,
+                )
+
+                total_results = count_movies_by_year_range(
+                    start_year,
+                    end_year,
+                )
+
+            # Поиск по конкретному жанру
+            else:
+                genre_name = categories[genre_id]
+
+                movies_with_extra = search_by_genre_and_year(
+                    genre_id,
+                    start_year,
+                    end_year,
+                    limit=limit + 1,
+                    offset=offset,
+                )
+
+                total_results = count_movies_by_genre_and_year(
+                    genre_id,
+                    start_year,
+                    end_year,
+                )
+
+            movies = movies_with_extra[:limit]
+            has_next = len(movies_with_extra) > limit
+
+            if log_search == "1":
+                save_search(
+                    search_type="genre__years_range",
+                    params={
+                        "genre": genre_name,
+                        "years_range": f"{start_year}-{end_year}",
+                    },
+                    results_count=total_results,
+                )
+
+            add_statistics_to_context(context)
+
+            context["movies"] = movies
+            context["offset"] = offset
+            context["has_previous"] = offset > 0
+            context["has_next"] = has_next
+            context["previous_offset"] = max(
+                0,
+                offset - limit,
+            )
+            context["next_offset"] = offset + limit
+            context["pagination_type"] = "genre"
+
+            if movies:
+                page_number = offset // limit + 1
+
+                context["message"] = (
+                    f"Страница {page_number}. "
+                    f"Показано результатов: {len(movies)}"
+                )
+
+            elif offset == 0:
+                context["message"] = "Фильмы не найдены."
+
+            else:
+                context["message"] = "Больше фильмов нет."
+
+        return templates.TemplateResponse(
+            request=request,
+            name="index.html",
+            context=context,
+        )
+
+    except MySQLError as error:
+        return database_error_response(error)
 
 @app.get("/statistics", response_class=HTMLResponse)
 def show_statistics(request: Request):
@@ -439,24 +470,28 @@ def show_statistics(request: Request):
 def film_detail(request: Request, film_id: int):
     """Показывает подробную информацию о фильме."""
 
-    film = get_film_by_id(film_id)
+    try:
+        film = get_film_by_id(film_id)
 
-    if film is None:
+        if film is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="film_detail.html",
+                context={
+                    "film": None,
+                    "page_title": "Фильм не найден",
+                },
+                status_code=404,
+            )
+
         return templates.TemplateResponse(
             request=request,
             name="film_detail.html",
             context={
-                "film": None,
-                "page_title": "Фильм не найден",
+                "film": film,
+                "page_title": film[1],
             },
-            status_code=404,
         )
 
-    return templates.TemplateResponse(
-        request=request,
-        name="film_detail.html",
-        context={
-            "film": film,
-            "page_title": film[1],
-        },
-    )
+    except MySQLError as error:
+        return database_error_response(error)
